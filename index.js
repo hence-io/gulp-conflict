@@ -1,11 +1,11 @@
 'use strict';
 var through2 = require('through2'),
     inquirer = require('inquirer'),
-    gutil = require('gulp-util'),
-    diff = require('diff'),
-    fs = require('fs'),
-    path = require('path'),
-    pkg = require('./package');
+    gutil    = require('gulp-util'),
+    diff     = require('diff'),
+    fs       = require('fs'),
+    path     = require('path'),
+    pkg      = require('./package');
 
 var choices = [
   {
@@ -35,7 +35,12 @@ var choices = [
   }
 ];
 
-module.exports = function conflict (dest, opt) {
+var logLevels = {
+  normal: 'normal',
+  lite: 'lite'
+};
+
+module.exports = function conflict(dest, opt) {
   if (!dest) {
     error('Missing destination dir parameter!');
   }
@@ -45,10 +50,11 @@ module.exports = function conflict (dest, opt) {
   var replaceAll = opt.replaceAll || false;
   var skipAll = opt.skipAll || false;
   var defaultChoice = opt.defaultChoice || null;
+  var logLevel = opt.logLevel || logLevels.normal;
 
   var defaultChoiceIndex = null;
 
-  choices.forEach(function(choice, index) {
+  choices.forEach(function (choice, index) {
     if (choice.key === defaultChoice) {
       defaultChoiceIndex = index;
     }
@@ -64,31 +70,35 @@ module.exports = function conflict (dest, opt) {
             error('Reading old file for comparison failed with: ' + err.message);
           }
           if (contents === String(file.contents)) {
-            logFile({
-              message: 'Skipping',
-              file: file,
-              stat: stat,
-              extraText: '(identical)',
-              logger: logger
-            });
+            if (logLevel === logLevels.normal) {
+              logFile({
+                message: 'Skipping',
+                file: file,
+                stat: stat,
+                extraText: '(identical)',
+                logger: logger
+              });
+            }
             return cb();
           }
 
           if (skipAll) {
-            logFile({
-              message: 'Skipping',
-              file: file,
-              stat: stat,
-              logger: logger
-            });
+            if (logLevel === logLevels.normal) {
+              logFile({
+                message: 'Skipping',
+                file: file,
+                stat: stat,
+                logger: logger
+              });
+            }
             return cb();
           }
 
-          var askCb = function askCb (action) {
+          var askCb = function askCb(action) {
             switch (action) {
               case 'replaceAll':
                 replaceAll = true;
-                /* falls through */
+              /* falls through */
               case 'replace':
                 logFile({
                   message: 'Overwriting',
@@ -100,7 +110,7 @@ module.exports = function conflict (dest, opt) {
                 break;
               case 'skipAll':
                 skipAll = true;
-                /* falls through */
+              /* falls through */
               case 'skip':
                 logFile({
                   message: 'Skipping',
@@ -129,12 +139,14 @@ module.exports = function conflict (dest, opt) {
           ask(file, defaultChoiceIndex, askCb.bind(this));
         }.bind(this));
       } else {
-        logFile({
-          message: 'Creating',
-          file: file,
-          stat: stat,
-          logger: logger
-        });
+        if (logLevel === logLevels.normal) {
+          logFile({
+            message: 'Creating',
+            file: file,
+            stat: stat,
+            logger: logger
+          });
+        }
         this.push(file);
         cb();
       }
@@ -142,21 +154,23 @@ module.exports = function conflict (dest, opt) {
   });
 };
 
-function ask (file, defaultChoiceIndex, cb) {
+function ask(file, defaultChoiceIndex, cb) {
 
-  inquirer.prompt([{
-    type: 'expand',
-    name: 'replace',
-    message: 'Replace ' + file.relative + '?',
-    default: defaultChoiceIndex,
-    choices: choices
-  }],
-  function (answers) {
-    cb(answers.replace);
-  });
+  inquirer.prompt([
+      {
+        type: 'expand',
+        name: 'replace',
+        message: 'Replace ' + file.relative + '?',
+        default: defaultChoiceIndex,
+        choices: choices
+      }
+    ],
+    function (answers) {
+      cb(answers.replace);
+    });
 }
 
-function diffFiles (newFile, oldFilePath) {
+function diffFiles(newFile, oldFilePath) {
   if (newFile.isStream()) {
     error('Diff does not support file streams');
   }
@@ -169,14 +183,14 @@ function diffFiles (newFile, oldFilePath) {
   }
 }
 
-function formatPart (part, i) {
+function formatPart(part, i) {
   var indent = new Array(8).join(' ');
   return (!i ? indent : '') + part.value.split('\n').map(function (line) {
-    return gutil.colors[colorFromPart(part)](line);
-  }).join('\n' + indent);
+      return gutil.colors[colorFromPart(part)](line);
+    }).join('\n' + indent);
 }
 
-function colorFromPart (part) {
+function colorFromPart(part) {
   if (part.added) {
     return 'bgGreen';
   } else if (part.removed) {
@@ -188,7 +202,7 @@ function colorFromPart (part) {
 /*
  * Args: message, file, stat, extraText
  */
-function logFile(options){
+function logFile(options) {
   var message   = options.message,
       file      = options.file,
       stat      = options.stat,
@@ -206,7 +220,7 @@ function logFile(options){
   }
 }
 
-function log () {
+function log() {
   if (isTest()) {
     return;
   }
@@ -214,11 +228,11 @@ function log () {
   logger.apply(logger, arguments);
 }
 
-function error (message) {
+function error(message) {
   throw new gutil.PluginError(pkg.name, message);
 }
 
-function isTest () {
+function isTest() {
   return process.env.NODE_ENV === 'test';
 }
 
