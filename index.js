@@ -50,7 +50,7 @@ module.exports = function conflict(dest, opt) {
   var replaceAll = opt.replaceAll || false;
   var skipAll = opt.skipAll || false;
   var defaultChoice = opt.defaultChoice || null;
-  var logLevel = opt.logLevel || logLevels.normal;
+  var logLevel = opt.logLevel || logLevels.lite;
 
   var defaultChoiceIndex = null;
 
