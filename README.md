@@ -64,6 +64,10 @@ Type: `Object`, *optional*
 
 **options.defaultChoice** - default choice on conflicts e.g. `'y'` (replace, default), `'n'` (skip), `'d'` (diff)
 
+**options.skipAll** - skip all conflicting files
+
+**options.replaceAll** - replace all conflicting files
+
 ## License
 
 [MIT License](http://en.wikipedia.org/wiki/MIT_License)
